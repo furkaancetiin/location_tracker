@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:stomp_dart_client/stomp.dart';
 import 'package:stomp_dart_client/stomp_config.dart';
 import 'package:stomp_dart_client/stomp_frame.dart';
@@ -26,17 +24,6 @@ class StompClientService {
       body: body,
     );
   }
-
-  // void sendPing(){
-  //   Timer.periodic(Duration(seconds: 30), (timer) {
-  //     print('Ping gönderiliyor...');
-  //     stompClient.send(
-  //       destination: '/app/ping', // Ping göndereceğiniz destination
-  //       body: 'ping', // Göndereceğiniz mesaj
-  //       headers: {}, // İsteğe bağlı başlıklar
-  //     );
-  //   });
-  // }
 
   void subscribe(String destination, Function(StompFrame message) callback) {
     stompClient.subscribe(

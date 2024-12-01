@@ -2,8 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:location_tracker_jet_blue/service/background_task_manager.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:location_tracker_jet_blue/service/location_service.dart';
+import 'package:location_tracker_jet_blue/service/my_task_handler.dart';
 import 'package:location_tracker_jet_blue/service/stomp_client_service.dart';
 import 'package:location_tracker_jet_blue/utils/upper_case_text_formatter.dart';
 import 'package:stomp_dart_client/stomp_frame.dart';
@@ -16,7 +17,7 @@ class StompClientScreen extends StatefulWidget {
 class _StompClientScreenState extends State<StompClientScreen> {
   final StompClientService stompService = StompClientService();
   final LocationService locationService = LocationService();
-  final BackgroundTaskManager backgroundTaskManager = BackgroundTaskManager();
+
   String? licensePlate;
   bool isTracking = false;
   bool _isButtonDisabled = false;
@@ -24,11 +25,11 @@ class _StompClientScreenState extends State<StompClientScreen> {
   @override
   void initState() {
     super.initState();
-    locationService.checkAndRequestLocationPermission();
-    backgroundTaskManager.initialize();
+    locationService.checkAndRequestPermissions();
+
   }
 
-  void startWebSocket(String licensePlate) {
+  Future<void> startWebSocket(String licensePlate) async {
     stompService.initialize('wss://location-d22e0369f042.herokuapp.com/ws',
         (frame) => onWebSocketConnect(frame, licensePlate), onWebSocketError);
   }
@@ -84,7 +85,7 @@ class _StompClientScreenState extends State<StompClientScreen> {
   @override
   void dispose() {
     stompService.deactivate();
-    backgroundTaskManager.stop();
+    //FlutterForegroundTask.removeTaskDataCallback(_onReceiveTaskData);
     super.dispose();
   }
 
