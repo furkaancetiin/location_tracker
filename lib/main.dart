@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'stomp_client_screen.dart';
+import 'ui/main_page.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized(); // Flutter'ın gerekli altyapısını başlatır.
   runApp(MyApp());
 }
 
@@ -14,7 +13,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: StompClientScreen(), // Ana ekran olarak StompClientScreen kullanılır.
+      home: MainPage(), // Ana ekran olarak StompClientScreen kullanılır.
     );
   }
 }

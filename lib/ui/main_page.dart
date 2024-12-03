@@ -4,17 +4,16 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:location_tracker_jet_blue/service/location_service.dart';
-import 'package:location_tracker_jet_blue/service/my_task_handler.dart';
+import 'package:location_tracker_jet_blue/service/location_task_handler.dart';
 import 'package:location_tracker_jet_blue/service/stomp_client_service.dart';
 import 'package:location_tracker_jet_blue/utils/upper_case_text_formatter.dart';
-import 'package:stomp_dart_client/stomp_frame.dart';
 
-class StompClientScreen extends StatefulWidget {
+class MainPage extends StatefulWidget {
   @override
-  _StompClientScreenState createState() => _StompClientScreenState();
+  _MainPageState createState() => _MainPageState();
 }
 
-class _StompClientScreenState extends State<StompClientScreen> {
+class _MainPageState extends State<MainPage> {
   final StompClientService stompService = StompClientService();
   final LocationService locationService = LocationService();
 
@@ -25,48 +24,84 @@ class _StompClientScreenState extends State<StompClientScreen> {
   @override
   void initState() {
     super.initState();
-    locationService.checkAndRequestPermissions();
 
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await locationService.checkAndRequestPermissions();
+      _initService();
+      _startService();
+    });
   }
 
-  Future<void> startWebSocket(String licensePlate) async {
-    stompService.initialize('wss://location-d22e0369f042.herokuapp.com/ws',
-        (frame) => onWebSocketConnect(frame, licensePlate), onWebSocketError);
-  }
-
-  void onWebSocketConnect(StompFrame frame, String licensePlate) {
-    setState(() {
-      isTracking = true;
-    });
-    stompService.subscribe('/topic/location', (message) async {
-      print('Sunucudan mesaj alındı: ${message.body}');
-      await sendLocationToServer(licensePlate);
-    });
-
-    stompService.subscribe(
-      '/topic/messages',
-      (message) async {
-        print('Ping mesaj alındı: ${message.body}');
-      },
+  void _initService() {
+    FlutterForegroundTask.initCommunicationPort();
+    FlutterForegroundTask.addTaskDataCallback(_onReceiveTaskData);
+    FlutterForegroundTask.init(
+      androidNotificationOptions: AndroidNotificationOptions(
+        channelId: 'foreground_service',
+        channelName: 'Foreground Service Notification',
+        channelDescription:
+        'This notification appears when the foreground service is running.',
+        onlyAlertOnce: true,
+      ),
+      iosNotificationOptions: const IOSNotificationOptions(
+        showNotification: false,
+        playSound: false,
+      ),
+      foregroundTaskOptions: ForegroundTaskOptions(
+        eventAction: ForegroundTaskEventAction.repeat(5000),
+        autoRunOnBoot: true,
+        autoRunOnMyPackageReplaced: true,
+        allowWakeLock: true,
+        allowWifiLock: true,
+      ),
     );
   }
 
-  void onWebSocketError(dynamic error) {
-    (dynamic error) => print('WebSocket Hatası: $error');
+  Future<ServiceRequestResult> _startService() async {
+    if (await FlutterForegroundTask.isRunningService) {
+      return FlutterForegroundTask.restartService();
+    } else {
+      return FlutterForegroundTask.startService(
+        serviceId: 256,
+        notificationTitle: 'XL Kargo Konum Takip',
+        notificationText: 'Plaka bilgisi girildikten sonra konum bilgisi anlık olarak alınacaktır.',
+        notificationIcon: null,
+        callback: startCallback,
+      );
+    }
   }
 
-  Future<void> sendLocationToServer(String licensePlate) async {
-    final location = await locationService.getCurrentLocation();
-    print(location);
-    if (location != null) {
-      Map<String, dynamic> locationData = {
-        "licensePlate": licensePlate,
-        "latitude": location['latitude'],
-        "longitude": location['longitude'],
-      };
-      stompService.sendMessage('/app/location', json.encode(locationData));
-      print('Konum bilgisi gönderildi: $locationData');
+  void _onReceiveTaskData(Object data) {
+    //print('onReceiveTaskData:');
+    if(data == "true"){
+      setState(() {
+        isTracking = true;
+      });
     }
+  }
+
+  void onPressedFollowButton(TextEditingController _controller){
+    setState(() {
+      _isButtonDisabled = true;
+    });
+    String input = _controller.text;
+    if (input.isNotEmpty) {
+      FlutterForegroundTask.sendDataToTask(json.encode(input));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Lütfen geçerli bir plaka giriniz")),
+      );
+      setState(() {
+        _isButtonDisabled = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    stompService.deactivate();
+    //FlutterForegroundTask.removeTaskDataCallback(_onReceiveTaskData);
+    super.dispose();
   }
 
   @override
@@ -79,34 +114,10 @@ class _StompClientScreenState extends State<StompClientScreen> {
           ),
           backgroundColor: Colors.orange,
         ),
-        body: isTracking ? secondScreen() : firstScreen());
+        body: isTracking ? locationReceivingScreen() : appInitialScreen());
   }
 
-  @override
-  void dispose() {
-    stompService.deactivate();
-    //FlutterForegroundTask.removeTaskDataCallback(_onReceiveTaskData);
-    super.dispose();
-  }
-
-  void onPressedFollowButton(TextEditingController _controller){
-    setState(() {
-      _isButtonDisabled = true;
-    });
-    String input = _controller.text;
-    if (input.isNotEmpty) {
-      startWebSocket(input);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Lütfen geçerli bir plaka giriniz")),
-      );
-      setState(() {
-        _isButtonDisabled = false;
-      });
-    }
-  }
-
-  Widget firstScreen() {
+  Widget appInitialScreen() {
     TextEditingController _controller = TextEditingController();
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.0),
@@ -163,7 +174,7 @@ class _StompClientScreenState extends State<StompClientScreen> {
     );
   }
 
-  Widget secondScreen() {
+  Widget locationReceivingScreen() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
