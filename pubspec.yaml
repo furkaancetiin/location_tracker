@@ -31,7 +31,7 @@ dependencies:
   flutter_foreground_task: ^8.14.0
   permission_handler: ^10.2.0
   stomp_dart_client: ^0.4.4
-  geolocator: ^9.0.1
+  geolocator: ^13.0.2
   web_socket_channel: ^2.1.0
   flutter:
     sdk: flutter

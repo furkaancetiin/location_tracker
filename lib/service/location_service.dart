@@ -7,14 +7,6 @@ import 'package:permission_handler/permission_handler.dart';
 class LocationService {
   Future<bool> checkAndRequestPermissions() async {
     try {
-      bool isLocationServiceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!isLocationServiceEnabled) {
-        isLocationServiceEnabled = await Geolocator.openLocationSettings();
-        if(!isLocationServiceEnabled){
-          return false;
-        }
-      }
-
       PermissionStatus whileInUse = await Permission.locationWhenInUse.status;
       if(!whileInUse.isGranted){
         whileInUse = await Permission.locationWhenInUse.request();
@@ -45,6 +37,11 @@ class LocationService {
         if (!await FlutterForegroundTask.isIgnoringBatteryOptimizations) {
           await FlutterForegroundTask.requestIgnoreBatteryOptimization();
         }
+      }
+
+      bool isLocationServiceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!isLocationServiceEnabled) {
+        await Geolocator.openLocationSettings();
       }
       return true;
     } catch (e) {

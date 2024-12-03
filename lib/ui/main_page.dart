@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:location_tracker_jet_blue/service/location_service.dart';
 import 'package:location_tracker_jet_blue/service/location_task_handler.dart';
 import 'package:location_tracker_jet_blue/service/stomp_client_service.dart';
@@ -80,20 +81,31 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
-  void onPressedFollowButton(TextEditingController _controller){
+  Future<void> onPressedFollowButton(TextEditingController _controller) async {
     setState(() {
       _isButtonDisabled = true;
     });
     String input = _controller.text;
-    if (input.isNotEmpty) {
-      FlutterForegroundTask.sendDataToTask(json.encode(input));
-    } else {
+    bool isLocationServiceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!isLocationServiceEnabled) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Lütfen geçerli bir plaka giriniz")),
+        SnackBar(content: Text("Konum servisi aktif değil. Lütfen konumu açınız.")),
       );
       setState(() {
         _isButtonDisabled = false;
       });
+    }else{
+      if (input.isNotEmpty) {
+        FlutterForegroundTask.sendDataToTask(json.encode(input));
+      }
+      else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Lütfen geçerli bir plaka giriniz")),
+        );
+        setState(() {
+          _isButtonDisabled = false;
+        });
+      }
     }
   }
 
