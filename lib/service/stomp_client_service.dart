@@ -12,6 +12,7 @@ class StompClientService {
         onConnect: onConnect,
         onWebSocketError: onWebSocketError,
         reconnectDelay: Duration(seconds: 5),
+        webSocketConnectHeaders: {'API-Key': 'd97ded37-d6f0-4302-99e6-76d229858b58'}
       ),
     );
 
