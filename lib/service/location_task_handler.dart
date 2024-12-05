@@ -31,7 +31,7 @@ class LocationTaskHandler extends TaskHandler {
   // Called when data is sent using [FlutterForegroundTask.sendDataToTask].
   @override
   void onReceiveData(Object data) {
-    stompService.initialize('wss://location-d22e0369f042.herokuapp.com/ws',
+    stompService.initialize('wss://location-java-2b8b3d434cff.herokuapp.com/ws',
             (frame) => onWebSocketConnect(frame, jsonDecode(data.toString())), onWebSocketError);
   }
 
